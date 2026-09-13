@@ -1,0 +1,6 @@
+{
+  "name": "Atlas Ocean Platform",
+  "description": "Comprehensive B2B trade and wholesale platform to upload, showcase, and manage categories, materials, and products for sales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

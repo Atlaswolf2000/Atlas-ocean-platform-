@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Global Smooth Transitions */
+* {
+  transition-property: background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark theme overrides for seamless site-wide dark mode */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #181716 !important;
+  color: #f5f5f5 !important;
+}
+
+.dark .bg-white {
+  background-color: #252220 !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-50\/50,
+.dark .bg-[#f8f8f8],
+.dark .bg-[#f9f9f9],
+.dark .bg-gray-100,
+.dark .bg-gray-100\/80 {
+  background-color: #2c2825 !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #3d3733 !important;
+}
+
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700 {
+  color: #f1ede9 !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: #b5ada6 !important;
+}
+
+.dark .text-gray-400 {
+  color: #938a83 !important;
+}
+
+.dark .bg-orange-50,
+.dark .bg-orange-50\/60,
+.dark .bg-orange-50\/70 {
+  background-color: rgba(223, 104, 40, 0.15) !important;
+}
+
+.dark .border-orange-200,
+.dark .border-orange-200\/80 {
+  border-color: rgba(223, 104, 40, 0.35) !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: #1e1c1a;
+  color: #f5f5f5;
+  border-color: #48403a;
+}
