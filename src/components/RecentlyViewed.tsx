@@ -30,7 +30,7 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
     return null;
   }
 
-  const categoryMap = new Map(categories.map((c) => [c.id, isAr ? c.nameAr : c.nameEn]));
+  const categoryMap = new Map((categories || []).filter(Boolean).map((c) => [c.id, isAr ? c.nameAr : c.nameEn]));
 
   return (
     <section 

@@ -39,6 +39,8 @@ interface NavbarProps {
   onOpenAdmin: () => void;
   onOpenMaterialCards?: () => void;
   onOpenStoreManagement?: (tab?: 'main-catalog' | 'store-products' | 'add-product' | 'store-profile' | 'store-contact') => void;
+  onOpenVendorDashboard?: () => void;
+  onOpenCreateStore?: () => void;
   onOpenAuth: (mode: 'login' | 'register') => void;
   onOpenWhatsApp: () => void;
   onToggleCategoriesDropdown: () => void;
@@ -64,6 +66,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAdmin,
   onOpenMaterialCards,
   onOpenStoreManagement,
+  onOpenVendorDashboard,
+  onOpenCreateStore,
   onOpenAuth,
   onOpenWhatsApp,
   onToggleCategoriesDropdown,
@@ -137,8 +141,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="w-full select-none shadow-md z-30 sticky top-0">
       {/* Top Header Bar */}
-      <div className="bg-[#4d4440] text-white py-3.5 px-4 sm:px-6 lg:px-8 border-b border-[#3b3430]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-[#4d4440] text-white py-3.5 px-3 sm:px-5 border-b border-[#3b3430]">
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Logo */}
           <AtlasLogo onClick={onGoHome} />
@@ -267,6 +271,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Top Quick Actions (Upload material & Cart) */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Multi-Vendor: Open Store / فتح متجر جديد */}
+            {onOpenCreateStore && (
+              <button
+                id="top-create-store-btn"
+                onClick={onOpenCreateStore}
+                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:border-amber-400 font-bold px-2.5 sm:px-3 py-2 text-xs rounded flex items-center gap-1.5 transition-all shadow-xs active:scale-95 whitespace-nowrap cursor-pointer"
+                title={isAr ? "تقديم طلب فتح متجر جديد على منصة أطلس" : "Apply for a Vendor Store"}
+              >
+                <PlusCircle className="w-4 h-4 text-amber-400" />
+                <span className="hidden md:inline">{isAr ? "طلب فتح متجر" : "Open Store"}</span>
+                <span className="md:hidden">{isAr ? "تاجر" : "Vendor"}</span>
+              </button>
+            )}
+
             {/* Store Management / متجري */}
             {onOpenStoreManagement && (
               <button
@@ -325,7 +343,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Secondary Nav Bar (Dark charcoal bar) */}
       <div className="bg-[#38312d] text-[#e0dedc] text-xs sm:text-sm font-medium border-b border-[#2b2522]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-10">
+        <div className="w-full px-3 sm:px-5 flex items-center justify-between h-10">
           
           {/* Left Side: All Categories & Home */}
           <div className="flex items-center h-full">
@@ -373,6 +391,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
+            {/* My Store (لوحة تحكم التاجر - متجري) */}
+            {onOpenVendorDashboard && (
+              <button
+                id="nav-my-store-btn"
+                onClick={onOpenVendorDashboard}
+                className="flex h-full px-3 sm:px-3.5 items-center gap-1.5 text-[#df6828] hover:text-white transition-colors bg-[#df6828]/10 hover:bg-[#df6828] border-x border-[#df6828]/30 font-bold cursor-pointer"
+                title={isAr ? "لوحة تحكم التاجر - متجري (Atlas Ocean Vendor Dashboard)" : "My Store - Vendor Dashboard"}
+              >
+                <Store className="w-3.5 h-3.5 text-[#df6828]" />
+                <span>{isAr ? "متجري" : "My Store"}</span>
+              </button>
+            )}
+
             {/* Store Management System (نظام إدارة المتجر) */}
             {onOpenStoreManagement && (
               <button
@@ -383,6 +414,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Store className="w-3.5 h-3.5 text-amber-400" />
                 <span>{isAr ? "إدارة المتجر" : "Store Manager"}</span>
+              </button>
+            )}
+
+            {/* Apply as Vendor / انضم كتاجر */}
+            {onOpenCreateStore && (
+              <button
+                id="nav-apply-vendor-btn"
+                onClick={onOpenCreateStore}
+                className="hidden md:flex h-full px-3 items-center gap-1.5 text-gray-300 hover:text-amber-300 transition-colors"
+                title={isAr ? "انضم كتاجر شريك على منصة أطلس" : "Join as a Partner Vendor"}
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isAr ? "انضم كتاجر" : "Join as Vendor"}</span>
               </button>
             )}
           </div>

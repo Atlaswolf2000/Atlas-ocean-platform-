@@ -73,12 +73,14 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
               <span className="text-gray-400 mr-1 text-[10px]">$</span>
               <input
                 type="number"
-                min={minPrice}
-                max={currentMax}
-                value={currentMin}
+                min={typeof minPrice === 'number' && !isNaN(minPrice) ? minPrice : 0}
+                max={typeof currentMax === 'number' && !isNaN(currentMax) ? currentMax : 99999}
+                value={typeof currentMin === 'number' && !isNaN(currentMin) ? currentMin : 0}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  onChange(val, Math.max(val, currentMax));
+                  const safeVal = isNaN(val) ? 0 : val;
+                  const safeMax = typeof currentMax === 'number' && !isNaN(currentMax) ? currentMax : safeVal;
+                  onChange(safeVal, Math.max(safeVal, safeMax));
                 }}
                 className="w-14 bg-transparent text-xs font-semibold outline-none text-gray-800"
                 placeholder="Min"
@@ -92,12 +94,14 @@ export const PriceFilter: React.FC<PriceFilterProps> = ({
               <span className="text-gray-400 mr-1 text-[10px]">$</span>
               <input
                 type="number"
-                min={currentMin}
-                max={maxPrice}
-                value={currentMax}
+                min={typeof currentMin === 'number' && !isNaN(currentMin) ? currentMin : 0}
+                max={typeof maxPrice === 'number' && !isNaN(maxPrice) ? maxPrice : 99999}
+                value={typeof currentMax === 'number' && !isNaN(currentMax) ? currentMax : 2500}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  onChange(Math.min(val, currentMin), val);
+                  const safeVal = isNaN(val) ? 0 : val;
+                  const safeMin = typeof currentMin === 'number' && !isNaN(currentMin) ? currentMin : 0;
+                  onChange(Math.min(safeVal, safeMin), safeVal);
                 }}
                 className="w-14 bg-transparent text-xs font-semibold outline-none text-gray-800"
                 placeholder="Max"

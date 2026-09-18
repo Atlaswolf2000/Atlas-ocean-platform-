@@ -10,9 +10,11 @@ export interface Category {
 
 export interface Product {
   id: string;
+  name?: string;
   titleEn: string;
   titleAr: string;
   categoryId: string;
+  department?: string;
   brand: string;
   vendor?: string;
   price: number;
@@ -31,6 +33,18 @@ export interface Product {
   createdAt: string;
   badge?: string;
   badgeAr?: string;
+}
+
+export interface DepartmentProduct {
+  id: string;
+  name: string;
+  department: string;
+  price: number;
+  currency: 'SAR';
+  moq: string;
+  rating: number;
+  vendor: string;
+  image: string;
 }
 
 export interface CartItem {
@@ -61,7 +75,7 @@ export interface Order {
 
 export type Language = 'en' | 'ar';
 
-export type CurrencyCode = 'USD' | 'SAR' | 'EUR';
+export type CurrencyCode = 'USD' | 'SAR' | 'EUR' | 'IQD';
 
 export interface RFQSubmission {
   id: string;
@@ -77,4 +91,19 @@ export interface RFQSubmission {
   notes?: string;
   createdAt: string;
   status: 'Pending' | 'Reviewing' | 'Quoted';
+}
+
+export interface VendorApplication {
+  id: string;
+  storeName: string;
+  ownerName: string;
+  phone: string;
+  email: string;
+  businessType: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt?: string;
+  rejectionReason?: string;
+  logo?: string;
 }

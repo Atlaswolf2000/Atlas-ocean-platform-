@@ -37,7 +37,7 @@ export const NewsletterSection: React.FC<NewsletterSectionProps> = ({ lang }) =>
   return (
     <section 
       id="platform-newsletter-section"
-      className="w-full px-4 sm:px-6 my-6 max-w-7xl mx-auto"
+      className="w-full my-6"
       dir={isAr ? 'rtl' : 'ltr'}
     >
       <div className="bg-[#26211e] text-white rounded-lg p-6 sm:p-8 md:p-10 relative overflow-hidden shadow-md border border-[#3e3835]">

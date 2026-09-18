@@ -1,4 +1,5 @@
 import { Category, Product, Order } from '../types';
+import { ALL_DEPARTMENT_PRODUCTS } from './departmentProducts';
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
@@ -541,7 +542,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     createdAt: '2025-02-28',
     badge: 'New Arrival',
     badgeAr: 'وصل حديثاً',
-  }
+  },
+  ...ALL_DEPARTMENT_PRODUCTS,
 ];
 
 export const INITIAL_ORDERS: Order[] = [

@@ -38,12 +38,22 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyDetails> = {
     rate: 0.92,
     flag: '🇪🇺',
   },
+  IQD: {
+    code: 'IQD',
+    symbol: 'IQD',
+    symbolAr: 'د.ع',
+    nameEn: 'Iraqi Dinar',
+    nameAr: 'دينار عراقي',
+    rate: 1310,
+    flag: '🇮🇶',
+  },
 };
 
 export function convertPrice(amountUSD: number, targetCurrency: CurrencyCode | string = 'USD'): number {
+  const num = typeof amountUSD === 'number' && !isNaN(amountUSD) ? amountUSD : 0;
   const code = (targetCurrency in CURRENCIES ? targetCurrency : 'USD') as CurrencyCode;
   const rate = CURRENCIES[code]?.rate ?? 1.0;
-  return amountUSD * rate;
+  return num * rate;
 }
 
 export function formatPrice(
@@ -52,10 +62,11 @@ export function formatPrice(
   lang: Language = 'ar',
   options?: { showUnit?: boolean; unit?: string }
 ): string {
+  const num = typeof amountUSD === 'number' && !isNaN(amountUSD) ? amountUSD : 0;
   const code = (targetCurrency in CURRENCIES ? targetCurrency : 'USD') as CurrencyCode;
   const currencyInfo = CURRENCIES[code] || CURRENCIES.USD;
-  const converted = amountUSD * currencyInfo.rate;
-  const symbol = lang === 'ar' ? currencyInfo.symbolAr : currencyInfo.symbol;
+  const converted = num * (currencyInfo.rate || 1.0);
+  const symbol = lang === 'ar' ? (currencyInfo.symbolAr || '$') : (currencyInfo.symbol || '$');
   
   const formattedNumber = converted.toLocaleString(undefined, {
     minimumFractionDigits: 2,

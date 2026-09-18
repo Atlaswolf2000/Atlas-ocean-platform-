@@ -18,7 +18,7 @@ import {
   Upload,
   Link as LinkIcon
 } from 'lucide-react';
-import { Product, Language } from '../types';
+import { Product, Language, VendorApplication } from '../types';
 
 interface StoreManagementModalProps {
   isOpen: boolean;
@@ -26,6 +26,9 @@ interface StoreManagementModalProps {
   products: Product[];
   onAddProduct: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
+  activeVendor?: VendorApplication | null;
+  approvedVendors?: VendorApplication[];
+  onSelectVendor?: (vendor: VendorApplication | null) => void;
   lang: Language;
   initialTab?: 'main-catalog' | 'store-products' | 'add-product' | 'store-profile' | 'store-contact';
 }
@@ -36,6 +39,9 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
   products,
   onAddProduct,
   onDeleteProduct,
+  activeVendor,
+  approvedVendors = [],
+  onSelectVendor,
   lang,
   initialTab = 'main-catalog',
 }) => {
@@ -56,6 +62,8 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
 
   if (!isOpen) return null;
 
+  const currentStoreName = activeVendor ? activeVendor.storeName : 'أطلس المحيط';
+
   // Filter for Main Catalog
   const query = searchInput.trim().toLowerCase();
   const filteredProducts = products.filter((p) => {
@@ -67,10 +75,13 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
     return titleMatch || descMatch;
   });
 
-  // Filter for Store Products (items belonging to atlas store or default)
-  const storeProducts = products.filter(
-    (p) => !p.vendor || p.vendor === 'أطلس المحيط' || p.vendor.includes('أطلس') || p.brand?.includes('ATLAS')
-  );
+  // Filter for Store Products (items belonging to current store)
+  const storeProducts = products.filter((p) => {
+    if (activeVendor) {
+      return p.vendor === activeVendor.storeName || p.brand === activeVendor.storeName;
+    }
+    return !p.vendor || p.vendor === 'أطلس المحيط' || p.vendor.includes('أطلس') || p.brand?.includes('ATLAS');
+  });
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,8 +113,8 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
       titleEn: title,
       titleAr: title,
       categoryId: 'cat-vehicles',
-      brand: 'ATLAS',
-      vendor: 'أطلس المحيط',
+      brand: currentStoreName,
+      vendor: currentStoreName,
       price: numericPrice,
       currency: '$',
       moq: numericMoq,
@@ -117,18 +128,18 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
         'القسم': category,
         'الحد الأدنى للطلب': minOrder,
         'المخزون': stock,
-        'المورد المعتمد': 'أطلس المحيط للتجارة العامة'
+        'المورد المعتمد': currentStoreName
       },
       isFeatured: true,
       rating: 5.0,
       ordersCount: 1,
       createdAt: new Date().toISOString(),
-      badge: 'متجر أطلس',
-      badgeAr: 'متجر أطلس',
+      badge: currentStoreName,
+      badgeAr: currentStoreName,
     };
 
     onAddProduct(newProduct);
-    alert(isAr ? 'تم إضافة المنتج بنجاح إلى متجر أطلس!' : 'Product successfully added to Atlas Store!');
+    alert(isAr ? `تم إضافة المنتج بنجاح إلى متجر ${currentStoreName}!` : `Product successfully added to ${currentStoreName}!`);
 
     // Reset Form
     setTitle('');
@@ -163,26 +174,61 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="bg-amber-500 text-slate-900 font-black p-2 rounded-lg text-xl shadow-xs">
-                أطلس
+                {activeVendor ? activeVendor.storeName.substring(0, 2) : 'أطلس'}
               </div>
               <div>
-                <h1 className="font-bold text-sm sm:text-base text-white leading-tight">
-                  أطلس المحيط للتجارة العامة والشحن الجوي
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-sm sm:text-base text-white leading-tight">
+                    {currentStoreName}
+                  </h1>
+                  {activeVendor && (
+                    <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
+                      متجر معتمد
+                    </span>
+                  )}
+                </div>
                 <span className="block text-xs text-amber-400 font-medium">
-                  نظام إدارة المتجر والمنتجات
+                  {activeVendor
+                    ? `بإدارة: ${activeVendor.ownerName} | منصة أطلس للتجارة العامة`
+                    : "نظام إدارة المتجر والمنتجات"}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Store Switcher if multiple vendors */}
+              {approvedVendors.length > 0 && onSelectVendor && (
+                <div className="hidden md:flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-xs">
+                  <span className="text-gray-400 text-[11px]">المتجر:</span>
+                  <select
+                    value={activeVendor ? activeVendor.id : 'default'}
+                    onChange={(e) => {
+                      if (e.target.value === 'default') {
+                        onSelectVendor(null);
+                      } else {
+                        const v = approvedVendors.find(vend => vend.id === e.target.value);
+                        if (v) onSelectVendor(v);
+                      }
+                    }}
+                    className="bg-transparent text-amber-400 font-bold focus:outline-hidden text-xs cursor-pointer"
+                  >
+                    <option value="default" className="bg-slate-900 text-white">متجر أطلس المحيط (الرئيسي)</option>
+                    {approvedVendors.map(v => (
+                      <option key={v.id} value={v.id} className="bg-slate-900 text-white">
+                        {v.storeName} ({v.ownerName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => setActiveTab('store-products')}
                 className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-sm shadow-xs transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Store className="w-4 h-4" />
-                <span>متجري</span>
+                <span>متجري ({storeProducts.length})</span>
               </button>
 
               <button
@@ -563,33 +609,48 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
             <section id="section-store-profile" className="view-section">
               <div className="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-md border border-gray-100 space-y-6">
                 <div className="flex flex-col md:flex-row items-center gap-6 border-b border-gray-200 pb-6">
-                  <div className="w-28 h-28 bg-slate-900 rounded-2xl flex items-center justify-center text-amber-500 text-4xl font-black shadow-lg">
-                    أطلس
+                  <div className="w-28 h-28 bg-slate-900 rounded-2xl flex items-center justify-center text-amber-500 text-3xl font-black shadow-lg">
+                    {activeVendor ? activeVendor.storeName.substring(0, 3) : 'أطلس'}
                   </div>
                   <div className="text-center md:text-right">
-                    <h2 className="text-2xl font-black text-slate-900">أطلس المحيط للتجارة العامة والشحن الجوي</h2>
-                    <p className="text-amber-600 font-semibold mt-1">متجر موثق للخدمات التجارية واستيراد الشحنات</p>
-                    <span className="inline-block mt-2 bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full font-bold border border-emerald-200">
-                      حساب متجر نشط
-                    </span>
+                    <h2 className="text-2xl font-black text-slate-900">
+                      {activeVendor ? activeVendor.storeName : 'أطلس المحيط للتجارة العامة والشحن الجوي'}
+                    </h2>
+                    <p className="text-amber-600 font-semibold mt-1">
+                      {activeVendor ? `نشاط المتجر: ${activeVendor.businessType}` : 'متجر موثق للخدمات التجارية واستيراد الشحنات'}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-2">
+                      <span className="bg-emerald-50 text-emerald-700 text-xs px-3 py-1 rounded-full font-bold border border-emerald-200">
+                        {activeVendor ? 'متجر معتمد رسمياً' : 'حساب متجر نشط'}
+                      </span>
+                      {activeVendor && (
+                        <span className="bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-full font-semibold border border-amber-200">
+                          المالك: {activeVendor.ownerName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-bold text-lg text-slate-800 mb-2">نبذة تعريفية عن المتجر:</h3>
                   <p className="text-gray-600 leading-relaxed text-sm">
-                    تتخصص شركة أطلس المحيط في العمليات التجارية، الاستيراد، وإدارة الشحن الجوي والبحري، وتوفير حلول متكاملة لتتبع الحاويات، إدارة المستودعات، وتسهيل التدقيق المالي وإصدار فواتير الشحن بكفاءة عالية في العراق.
+                    {activeVendor
+                      ? activeVendor.description
+                      : 'تتخصص شركة أطلس المحيط في العمليات التجارية، الاستيراد، وإدارة الشحن الجوي والبحري، وتوفير حلول متكاملة لتتبع الحاويات، إدارة المستودعات، وتسهيل التدقيق المالي وإصدار فواتير الشحن بكفاءة عالية في العراق.'}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <span className="block text-xs text-gray-500 mb-1">مجال العمل الأساسي</span>
-                    <span className="font-bold text-slate-900">التجارة العامة والشحن الجوي والبحري</span>
+                    <span className="font-bold text-slate-900">
+                      {activeVendor ? activeVendor.businessType : 'التجارة العامة والشحن الجوي والبحري'}
+                    </span>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <span className="block text-xs text-gray-500 mb-1">منطقة العمليات الرئيسية</span>
-                    <span className="font-bold text-slate-900">بغداد - العراق</span>
+                    <span className="block text-xs text-gray-500 mb-1">منطقة العمليات والمنصة</span>
+                    <span className="font-bold text-slate-900">منصة أطلس المحيط - العراق</span>
                   </div>
                 </div>
               </div>
@@ -605,27 +666,31 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
                   <span>قنوات الاتصال والتواصل مع المتجر</span>
                 </h2>
                 <p className="text-gray-600 text-sm">
-                  يمكنكم التواصل معنا مباشرة عبر القنوات المعتمدة أدناه لمتابعة الشحنات والطلبات:
+                  {activeVendor
+                    ? `بيانات التواصل المباشر مع إدارة متجر "${activeVendor.storeName}":`
+                    : 'يمكنكم التواصل معنا مباشرة عبر القنوات المعتمدة أدناه لمتابعة الشحنات والطلبات:'}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Phone */}
                   <a
-                    href="tel:07818418899"
+                    href={`tel:${activeVendor ? activeVendor.phone : '07818418899'}`}
                     className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-amber-50 transition border border-gray-200 group"
                   >
                     <div className="w-12 h-12 bg-amber-500 text-slate-900 rounded-xl flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">
                       <Phone className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-gray-500">رقم الهاتف الأساسي</span>
-                      <span className="font-bold text-slate-900 text-lg" dir="ltr">0781 841 8899</span>
+                      <span className="block text-xs text-gray-500">رقم الهاتف</span>
+                      <span className="font-bold text-slate-900 text-lg" dir="ltr">
+                        {activeVendor ? activeVendor.phone : '0781 841 8899'}
+                      </span>
                     </div>
                   </a>
 
                   {/* WhatsApp */}
                   <a
-                    href="https://wa.me/9647818418899"
+                    href={`https://wa.me/${(activeVendor ? activeVendor.phone : '9647818418899').replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition border border-emerald-200 group"
@@ -635,29 +700,40 @@ export const StoreManagementModal: React.FC<StoreManagementModalProps> = ({
                     </div>
                     <div>
                       <span className="block text-xs text-emerald-700 font-semibold">مراسلة واتساب الفورية</span>
-                      <span className="font-bold text-emerald-900 text-lg" dir="ltr">0781 841 8899</span>
+                      <span className="font-bold text-emerald-900 text-lg" dir="ltr">
+                        {activeVendor ? activeVendor.phone : '0781 841 8899'}
+                      </span>
                     </div>
                   </a>
 
                   {/* Email */}
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <a
+                    href={`mailto:${activeVendor ? activeVendor.email : 'atlas.ocean@trade.iq'}`}
+                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-blue-50 transition"
+                  >
                     <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center text-xl font-bold">
                       <Mail className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-gray-500">البريد الإلكتروني للشركة</span>
-                      <span className="font-bold text-slate-900 text-sm">atlas.ocean@trade.iq</span>
+                      <span className="block text-xs text-gray-500">البريد الإلكتروني</span>
+                      <span className="font-bold text-slate-900 text-sm" dir="ltr">
+                        {activeVendor ? activeVendor.email : 'atlas.ocean@trade.iq'}
+                      </span>
                     </div>
-                  </div>
+                  </a>
 
-                  {/* Address */}
+                  {/* Address / Owner */}
                   <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <div className="w-12 h-12 bg-slate-900 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">
                       <MapPin className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-gray-500">العنوان الرسمي</span>
-                      <span className="font-bold text-slate-900 text-sm">بغداد - شارع الفروسية - الدورة</span>
+                      <span className="block text-xs text-gray-500">
+                        {activeVendor ? 'مسؤول المتجر والاعتماد' : 'العنوان الرسمي'}
+                      </span>
+                      <span className="font-bold text-slate-900 text-sm">
+                        {activeVendor ? `${activeVendor.ownerName} (معتمد لدى منصة أطلس)` : 'بغداد - شارع الفروسية - الدورة'}
+                      </span>
                     </div>
                   </div>
                 </div>

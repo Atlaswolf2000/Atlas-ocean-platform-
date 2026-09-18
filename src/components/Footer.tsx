@@ -8,6 +8,8 @@ interface FooterProps {
   categories: Category[];
   onSelectCategory: (id: string | null) => void;
   onOpenUpload: () => void;
+  onOpenCreateStore?: () => void;
+  onOpenStoreManagement?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -15,12 +17,14 @@ export const Footer: React.FC<FooterProps> = ({
   categories,
   onSelectCategory,
   onOpenUpload,
+  onOpenCreateStore,
+  onOpenStoreManagement,
 }) => {
   const isAr = lang === 'ar';
 
   return (
-    <footer id="platform-footer" className="bg-[#38312d] text-gray-300 pt-12 pb-8 border-t-4 border-[#df6828] select-none text-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer id="platform-footer" className="bg-[#38312d] text-gray-300 pt-12 pb-8 border-t-4 border-[#df6828] select-none text-xs w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         
         {/* Top Footer Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-[#4d4440]">
@@ -75,8 +79,22 @@ export const Footer: React.FC<FooterProps> = ({
               {isAr ? "خدمات التجارة والتوريد" : "Trade Services"}
             </h4>
             <ul className="space-y-2 text-gray-400">
+              {onOpenCreateStore && (
+                <li>
+                  <button onClick={onOpenCreateStore} className="text-amber-400 font-bold hover:underline flex items-center gap-1 text-left">
+                    <span>{isAr ? "✨ تقديم طلب فتح متجر (تعدد التجار)" : "✨ Apply for Vendor Store"}</span>
+                  </button>
+                </li>
+              )}
+              {onOpenStoreManagement && (
+                <li>
+                  <button onClick={onOpenStoreManagement} className="hover:text-amber-400 text-left">
+                    {isAr ? "نظام إدارة المتجر (Store Manager)" : "Store Manager Portal"}
+                  </button>
+                </li>
+              )}
               <li>
-                <button onClick={onOpenUpload} className="text-[#df6828] font-bold hover:underline">
+                <button onClick={onOpenUpload} className="text-[#df6828] font-bold hover:underline text-left">
                   {isAr ? "+ رفع المنتجات والمواد" : "+ Upload New Materials"}
                 </button>
               </li>

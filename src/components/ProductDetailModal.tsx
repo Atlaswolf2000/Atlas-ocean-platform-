@@ -196,11 +196,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   ];
 
   const activeDiscount = quantity >= 250 ? 15 : quantity >= 100 ? 10 : quantity >= 50 ? 5 : 0;
-  const unitPriceAfterDiscount = product.price * (1 - activeDiscount / 100);
+  const unitPriceAfterDiscount = (product?.price ?? 0) * (1 - activeDiscount / 100);
   const totalPrice = unitPriceAfterDiscount * quantity;
-  const avgRating = reviews.length > 0 
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-    : product.rating.toFixed(1);
+  const avgRating = reviews && reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + (r?.rating ?? 0), 0) / reviews.length).toFixed(1)
+    : (typeof product?.rating === 'number' && !isNaN(product.rating) ? product.rating : 4.8).toFixed(1);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
@@ -627,10 +627,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </button>
                   <input
                     type="number"
-                    min={product.moq}
-                    max={product.stock}
+                    min={product?.moq || 1}
+                    max={typeof product?.stock === 'number' && !isNaN(product.stock) ? product.stock : 9999}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(product.moq, parseInt(e.target.value) || product.moq))}
+                    onChange={(e) => {
+                      const minVal = product?.moq || 1;
+                      const parsed = parseInt(e.target.value, 10);
+                      setQuantity(Math.max(minVal, isNaN(parsed) ? minVal : parsed));
+                    }}
                     className="w-16 text-center py-1.5 text-xs font-bold outline-none bg-transparent"
                   />
                   <button

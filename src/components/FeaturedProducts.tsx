@@ -40,8 +40,8 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 }) => {
   const isAr = lang === 'ar';
 
-  const categoryMap = new Map(categories.map(c => [c.id, isAr ? c.nameAr : c.nameEn]));
-  const currentCategory = selectedCategoryId ? categories.find(c => c.id === selectedCategoryId) : null;
+  const categoryMap = new Map((categories || []).filter(Boolean).map(c => [c.id, isAr ? c.nameAr : c.nameEn]));
+  const currentCategory = selectedCategoryId ? (categories || []).find(c => c && c.id === selectedCategoryId) : null;
 
   return (
     <section id="featured-products-section" className="w-full mt-8 mb-12 relative">

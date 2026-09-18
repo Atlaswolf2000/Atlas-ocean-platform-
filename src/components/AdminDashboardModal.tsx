@@ -28,9 +28,17 @@ import {
   Star,
   Edit3,
   PackageOpen,
-  Store
+  Store,
+  User,
+  Phone,
+  Mail,
+  Briefcase,
+  Check,
+  Ban,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
-import { Category, Product, Order, Language } from '../types';
+import { Category, Product, Order, Language, VendorApplication } from '../types';
 import { SalesPerformanceChart } from './SalesPerformanceChart';
 
 interface AdminDashboardModalProps {
@@ -39,6 +47,9 @@ interface AdminDashboardModalProps {
   categories: Category[];
   products: Product[];
   orders: Order[];
+  vendors?: VendorApplication[];
+  onUpdateVendorStatus?: (vendorId: string, status: 'approved' | 'rejected', reason?: string) => void;
+  onDeleteVendor?: (vendorId: string) => void;
   onDeleteProduct: (id: string) => void;
   onAddCategory: (nameEn: string, nameAr: string, image?: string) => void;
   onUpdateCategoryImage?: (id: string, imageUrl: string) => void;
@@ -58,6 +69,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   categories,
   products,
   orders,
+  vendors = [],
+  onUpdateVendorStatus,
+  onDeleteVendor,
   onDeleteProduct,
   onAddCategory,
   onUpdateCategoryImage,
@@ -70,9 +84,15 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   onPrintInvoice,
   lang,
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'sales' | 'performance'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'sales' | 'performance' | 'vendors'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Vendor Requests state
+  const [vendorFilter, setVendorFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [vendorSearch, setVendorSearch] = useState('');
+  const [rejectingVendor, setRejectingVendor] = useState<VendorApplication | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+
   // New Category State
   const [newCatEn, setNewCatEn] = useState('');
   const [newCatAr, setNewCatAr] = useState('');
@@ -84,6 +104,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   const isAr = lang === 'ar';
 
   if (!isOpen) return null;
+
+  const pendingVendorsCount = vendors.filter(v => v.status === 'pending').length;
+  const approvedVendorsCount = vendors.filter(v => v.status === 'approved').length;
+  const rejectedVendorsCount = vendors.filter(v => v.status === 'rejected').length;
 
   // Category lookup
   const categoryMap = new Map(categories.map(c => [c.id, isAr ? c.nameAr : c.nameEn]));
@@ -311,6 +335,26 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
             >
               <BarChart3 className="w-4 h-4 text-[#df6828]" />
               <span>{isAr ? "لوحة تحكم أداء المبيعات" : "Sales Performance Dashboard"}</span>
+            </button>
+
+            {/* Vendor Applications / طلبات المتاجر المعلقة */}
+            <button
+              onClick={() => setActiveTab('vendors')}
+              className={`px-4 py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+                activeTab === 'vendors'
+                  ? 'border-amber-500 text-amber-600 bg-white'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Store className="w-4 h-4 text-amber-500" />
+              <span>{isAr ? "طلبات المتاجر المعلقة" : "Pending Store Requests"}</span>
+              {pendingVendorsCount > 0 ? (
+                <span className="bg-amber-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                  {pendingVendorsCount}
+                </span>
+              ) : (
+                <span className="text-gray-400 text-[10px]">({vendors.length})</span>
+              )}
             </button>
           </div>
 
@@ -1045,6 +1089,372 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Tab 5: Vendor Applications & Approvals (نظام طلبات وموافقات المتاجر) */}
+          {activeTab === 'vendors' && (
+            <div className="space-y-6">
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-500/20 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-amber-600" />
+                    <span>{isAr ? "نظام اعتماد وموافقة المتاجر (Multi-Vendor Approvals)" : "Vendor Store Approval Workflow"}</span>
+                    <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-300">
+                      {isAr ? "تحكم الإدارة" : "Admin Control"}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                    {isAr
+                      ? "تدقيق ومراجعة طلبات التجار الجديدة. المتاجر المعتمدة فقط تمنح صلاحية إدارة المتجر ورفع المنتجات إلى منصة أطلس المحيط."
+                      : "Review vendor applications. Only approved stores can access Store Manager and publish products."}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="text-center px-3 py-1.5 bg-amber-50 border border-amber-200 rounded">
+                    <span className="text-[10px] text-amber-700 block font-semibold">{isAr ? "قيد المراجعة" : "Pending"}</span>
+                    <span className="text-base font-extrabold text-amber-600">{pendingVendorsCount}</span>
+                  </div>
+                  <div className="text-center px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded">
+                    <span className="text-[10px] text-emerald-700 block font-semibold">{isAr ? "معتمد" : "Approved"}</span>
+                    <span className="text-base font-extrabold text-emerald-600">{approvedVendorsCount}</span>
+                  </div>
+                  <div className="text-center px-3 py-1.5 bg-rose-50 border border-rose-200 rounded">
+                    <span className="text-[10px] text-rose-700 block font-semibold">{isAr ? "مرفوض" : "Rejected"}</span>
+                    <span className="text-base font-extrabold text-rose-600">{rejectedVendorsCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters & Search */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-lg border border-gray-200 shadow-2xs">
+                {/* Filter Chips */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                  {[
+                    { id: 'all', label: isAr ? 'جميع الطلبات' : 'All Requests', count: vendors.length },
+                    { id: 'pending', label: isAr ? 'قيد المراجعة المعلقة' : 'Pending Review', count: pendingVendorsCount },
+                    { id: 'approved', label: isAr ? 'المتاجر المعتمدة' : 'Approved Stores', count: approvedVendorsCount },
+                    { id: 'rejected', label: isAr ? 'الطلبات المرفوضة' : 'Rejected', count: rejectedVendorsCount },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setVendorFilter(f.id as any)}
+                      className={`px-3 py-1.5 rounded text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                        vendorFilter === f.id
+                          ? 'bg-[#4d4440] text-white shadow-xs'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>{f.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        vendorFilter === f.id ? 'bg-amber-400 text-slate-950 font-black' : 'bg-gray-200 text-gray-700'
+                      }`}>
+                        {f.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-2.5 rtl:right-3 rtl:left-auto ltr:left-3 ltr:right-auto pointer-events-none" />
+                  <input
+                    type="text"
+                    value={vendorSearch}
+                    onChange={(e) => setVendorSearch(e.target.value)}
+                    placeholder={isAr ? "بحث باسم المتجر، المالك، الهاتف..." : "Search store, owner, phone..."}
+                    className="w-full bg-gray-50 border border-gray-300 rounded py-1.5 rtl:pr-8 rtl:pl-3 ltr:pl-8 ltr:pr-3 text-xs focus:outline-hidden focus:border-[#df6828] transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Vendors List */}
+              {(() => {
+                const filteredVendors = vendors.filter(v => {
+                  const matchesFilter = vendorFilter === 'all' || v.status === vendorFilter;
+                  const q = vendorSearch.toLowerCase().trim();
+                  const matchesSearch = !q || (
+                    v.storeName.toLowerCase().includes(q) ||
+                    v.ownerName.toLowerCase().includes(q) ||
+                    v.phone.toLowerCase().includes(q) ||
+                    v.email.toLowerCase().includes(q) ||
+                    v.businessType.toLowerCase().includes(q) ||
+                    v.description.toLowerCase().includes(q)
+                  );
+                  return matchesFilter && matchesSearch;
+                });
+
+                if (filteredVendors.length === 0) {
+                  return (
+                    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                      <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 mb-3">
+                        <Store className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-800">
+                        {isAr ? "لا توجد طلبات تطابق معايير البحث" : "No vendor requests found"}
+                      </h4>
+                      <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
+                        {isAr
+                          ? "لم يتم العثور على طلبات متاجر في هذا القسم. عند تقديم التجار طلبات جديدة ستظهر هنا مباشرة للموافقة أو الرفض."
+                          : "No applications match the current filter. New submissions will appear here automatically."}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {filteredVendors.map((vendor) => {
+                      const isPending = vendor.status === 'pending';
+                      const isApproved = vendor.status === 'approved';
+                      const isRejected = vendor.status === 'rejected';
+
+                      return (
+                        <div
+                          key={vendor.id}
+                          className={`bg-white rounded-lg border transition-all p-5 shadow-2xs ${
+                            isPending
+                              ? 'border-amber-300 ring-2 ring-amber-400/20'
+                              : isApproved
+                              ? 'border-emerald-200'
+                              : 'border-gray-200 opacity-80'
+                          }`}
+                        >
+                          {/* Card Top Row */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base ${
+                                isPending
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : isApproved
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-rose-100 text-rose-700'
+                              }`}>
+                                <Store className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-bold text-gray-900">{vendor.storeName}</h4>
+                                  <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">
+                                    {vendor.businessType}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-0.5">
+                                  <span>{isAr ? "تاريخ الطلب:" : "Submitted:"} {vendor.createdAt}</span>
+                                  {vendor.approvedAt && (
+                                    <span className="text-emerald-600 font-medium">
+                                      {isAr ? "تم الاعتماد في:" : "Approved at:"} {vendor.approvedAt}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Status Badge & Action Controls */}
+                            <div className="flex items-center gap-2">
+                              {/* Status Badge */}
+                              {isPending && (
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{isAr ? "قيد المراجعة المعلقة" : "Pending Review"}</span>
+                                </span>
+                              )}
+                              {isApproved && (
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full">
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                  <span>{isAr ? "متجر معتمد ونشط" : "Approved & Active"}</span>
+                                </span>
+                              )}
+                              {isRejected && (
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-800 bg-rose-100 border border-rose-300 px-3 py-1 rounded-full">
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                  <span>{isAr ? "طلب مرفوض" : "Rejected"}</span>
+                                </span>
+                              )}
+
+                              {/* Approval Buttons */}
+                              {onUpdateVendorStatus && (
+                                <div className="flex items-center gap-1.5 ml-2 rtl:mr-2 rtl:ml-0">
+                                  {/* Approve Button (Green) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => onUpdateVendorStatus(vendor.id, 'approved')}
+                                    disabled={isApproved}
+                                    className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 transition-all shadow-xs cursor-pointer ${
+                                      isApproved
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
+                                    }`}
+                                    title={isAr ? "موافقة على المتجر واعتماده" : "Approve vendor store"}
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "موافقة" : "Approve"}</span>
+                                  </button>
+
+                                  {/* Reject Button (Red) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setRejectingVendor(vendor);
+                                      setRejectionReasonInput('');
+                                    }}
+                                    disabled={isRejected}
+                                    className={`px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 transition-all shadow-xs cursor-pointer ${
+                                      isRejected
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-rose-600 hover:bg-rose-700 text-white active:scale-95'
+                                    }`}
+                                    title={isAr ? "رفض طلب المتجر" : "Reject vendor store"}
+                                  >
+                                    <Ban className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "رفض" : "Reject"}</span>
+                                  </button>
+
+                                  {/* Delete Button */}
+                                  {onDeleteVendor && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (window.confirm(isAr ? `هل أنت متأكد من حذف طلب متجر "${vendor.storeName}"؟` : `Delete store "${vendor.storeName}"?`)) {
+                                          onDeleteVendor(vendor.id);
+                                        }
+                                      }}
+                                      className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                                      title={isAr ? "حذف الطلب" : "Delete application"}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Details Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-3 text-xs text-gray-700 border-b border-gray-100">
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              <span className="text-gray-500">{isAr ? "المالك:" : "Owner:"}</span>
+                              <span className="font-semibold text-gray-900">{vendor.ownerName}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span className="text-gray-500">{isAr ? "الهاتف:" : "Phone:"}</span>
+                              <a
+                                href={`https://wa.me/${vendor.phone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-mono text-emerald-700 hover:underline font-bold"
+                                dir="ltr"
+                              >
+                                {vendor.phone}
+                              </a>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <span className="text-gray-500">{isAr ? "البريد:" : "Email:"}</span>
+                              <a
+                                href={`mailto:${vendor.email}`}
+                                className="font-mono text-blue-700 hover:underline truncate"
+                                dir="ltr"
+                              >
+                                {vendor.email}
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Description & Notes */}
+                          <div className="mt-3 text-xs">
+                            <span className="font-semibold text-gray-700 block mb-1">
+                              {isAr ? "نبذة عن النشاط والبضائع:" : "Business Description:"}
+                            </span>
+                            <p className="text-gray-600 bg-gray-50 p-2.5 rounded border border-gray-100 leading-relaxed">
+                              {vendor.description}
+                            </p>
+
+                            {/* Show Rejection Note if rejected */}
+                            {isRejected && vendor.rejectionReason && (
+                              <div className="mt-2 bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="font-bold">{isAr ? "سبب الرفض الموجه للتاجر:" : "Rejection Reason:"} </span>
+                                  <span>{vendor.rejectionReason}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Rejection Reason Modal */}
+              {rejectingVendor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                  <div className="bg-white rounded-xl shadow-2xl border border-gray-300 w-full max-w-md p-6 text-gray-900 animate-in fade-in zoom-in-95">
+                    <div className="flex items-center justify-between border-b pb-3 mb-4">
+                      <div className="flex items-center gap-2 text-rose-600">
+                        <AlertCircle className="w-5 h-5" />
+                        <h4 className="font-bold text-sm">
+                          {isAr ? `رفض طلب متجر "${rejectingVendor.storeName}"` : `Reject Store "${rejectingVendor.storeName}"`}
+                        </h4>
+                      </div>
+                      <button
+                        onClick={() => setRejectingVendor(null)}
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-gray-600 mb-3">
+                      {isAr
+                        ? "يمكنك كتابة سبب الرفض لتوضيحه للمستخدم عند محاولته الدخول إلى نظام المتجر:"
+                        : "Enter the rejection reason to display to the applicant:"}
+                    </p>
+
+                    <textarea
+                      rows={3}
+                      value={rejectionReasonInput}
+                      onChange={(e) => setRejectionReasonInput(e.target.value)}
+                      placeholder={isAr ? "مثال: عدم وضوح بيانات السجل التجاري، أو نقص في معلومات الاتصال..." : "e.g. Missing commercial license details..."}
+                      className="w-full bg-gray-50 border border-gray-300 rounded p-2.5 text-xs text-gray-900 focus:outline-hidden focus:border-rose-500 mb-4"
+                    />
+
+                    <div className="flex items-center justify-end gap-2 text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setRejectingVendor(null)}
+                        className="px-4 py-2 rounded text-gray-600 hover:bg-gray-100 cursor-pointer"
+                      >
+                        {isAr ? "إلغاء" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onUpdateVendorStatus && rejectingVendor) {
+                            onUpdateVendorStatus(
+                              rejectingVendor.id,
+                              'rejected',
+                              rejectionReasonInput.trim() || (isAr ? 'لم يستوفِ الشروط المطلوبة للمنصة' : 'Requirements not met')
+                            );
+                          }
+                          setRejectingVendor(null);
+                        }}
+                        className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded transition-colors shadow-xs cursor-pointer"
+                      >
+                        {isAr ? "تأكيد الرفض" : "Confirm Rejection"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
